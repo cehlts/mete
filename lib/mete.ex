@@ -109,9 +109,15 @@ defmodule Mete do
   defp __write__(measurement, tags, fields, timestamp) do
     case __tags__() do
       {true, p_tags} ->
-        GenServer.cast(
-          __MODULE__,
-          {:write, {measurement, into_tags(tags, p_tags), fields, timestamp || timestamp()}}
+        adapters = Registry.lookup(Mete.Registry, :adapters)
+        # TODO different endpoints
+        {pid, _} = Enum.random(adapters)
+
+        Process.send(
+          pid,
+          {:measurement,
+           {measurement, into_tags(tags, p_tags), fields, timestamp || timestamp()}},
+          []
         )
 
       _ ->
